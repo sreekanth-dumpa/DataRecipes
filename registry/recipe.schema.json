@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://datarecipes.internal/schema/recipe.schema.json",
+  "title": "Recipe",
+  "description": "Canonical, versioned recipe specification (Just-in-Time Derived Data Product Architecture v2, Section 2-3).",
+  "type": "object",
+  "required": ["id", "version", "kind", "status", "owner", "description", "grain", "output"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Dot-namespaced recipe identifier, e.g. quote.eligible_journey",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
+    "version": {
+      "type": "string",
+      "description": "Immutable version for this spec, e.g. 1.0, 2.3",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "kind": {
+      "type": "string",
+      "description": "Recipe kind per Section 2. Feature/model and Process are out of scope for POC Iteration 1.",
+      "enum": ["attribute", "population", "metric", "feature", "process"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Publication status per Section 3. Always paired with use_scope.",
+      "enum": ["draft", "exploratory", "verified", "production_approved", "filing_approved", "deprecated", "withdrawn"]
+    },
+    "use_scope": {
+      "type": "array",
+      "description": "Declared uses this status covers, e.g. ['exploratory_bi']. Verified for exploratory BI does not imply filing approval.",
+      "items": {"type": "string"}
+    },
+    "owner": {
+      "type": "string",
+      "description": "Domain owner accountable for intended scope and limitations."
+    },
+    "description": {
+      "type": "string",
+      "description": "Business intent in plain language."
+    },
+    "uses": {
+      "type": "array",
+      "description": "Dependencies on other recipes, forming a DAG. Composite recipes reference one or more.",
+      "items": {
+        "type": "object",
+        "required": ["ref", "as"],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "Dependency as id@version, e.g. quote.eligible_journey@2.1",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+@[0-9]+\\.[0-9]+$"
+          },
+          "as": {
+            "type": "string",
+            "description": "Local alias used by parameters/output/implementation."
+          }
+        }
+      }
+    },
+    "parameters": {
+      "type": "array",
+      "description": "Parameters this recipe accepts at request time.",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "type": {"type": "string", "enum": ["date", "string", "int", "float", "boolean", "enum"]},
+          "required": {"type": "boolean", "default": true},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "grain": {
+      "type": "string",
+      "description": "Explicit output grain, e.g. 'product_version x month x young_driver_segment'."
+    },
+    "time_semantics": {
+      "type": "object",
+      "description": "As-of / knowledge-cutoff behavior. Required for any recipe touching effective-dated FDPs.",
+      "additionalProperties": false,
+      "properties": {
+        "knowledge_cutoff_param": {
+          "type": "string",
+          "description": "Name of the parameter carrying the knowledge cutoff, if any."
+        },
+        "as_of_behavior": {
+          "type": "string",
+          "enum": ["point_in_time", "latest", "range"],
+          "description": "How the recipe interprets time. Must be explicit and unambiguous (validator rejects ambiguous as-of)."
+        }
+      }
+    },
+    "output": {
+      "type": "array",
+      "description": "Named output fields with types and, where applicable, units.",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "type": {"type": "string"},
+          "unit": {"type": "string"}
+        }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "description": "Executable implementation. Atomic recipes carry a source_table/sql_template; composite recipes derive from 'uses' via the compiler.",
+      "additionalProperties": false,
+      "properties": {
+        "engine": {"type": "string", "enum": ["snowflake", "python"], "description": "POC Iteration 1 permits snowflake only; python is a later-phase addition."},
+        "source_table": {"type": "string"},
+        "sql_template": {"type": "string", "description": "Path to a .sql.j2 template under compiler/templates/, or inline SQL for simple atomic recipes."},
+        "join_keys": {"type": "array", "items": {"type": "string"}},
+        "join_on": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "For composite recipes: column name(s) shared by every dependency's output, used to join their CTEs."
+        },
+        "output_expressions": {
+          "type": "object",
+          "description": "For composite recipes: maps each declared output field name to a SQL expression over dependency aliases, e.g. {\"bind_rate\": \"bound_count / NULLIF(eligible_count, 0)\"}.",
+          "additionalProperties": {"type": "string"}
+        },
+        "group_by": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "For composite recipes: expressions to GROUP BY, aliased to a dependency's output column."
+        }
+      }
+    },
+    "tests": {
+      "type": "array",
+      "description": "References to fixtures under tests/fixtures/ used by the analyst test workbench.",
+      "items": {"type": "string"}
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "approver", "date"],
+        "additionalProperties": false,
+        "properties": {
+          "role": {"type": "string", "enum": ["domain_owner", "engineering", "security", "actuarial"]},
+          "approver": {"type": "string"},
+          "date": {"type": "string", "format": "date"},
+          "scope": {"type": "string"}
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Known limitations or exclusions travelling with the recipe (Section 1, explicit scope principle)."
+    }
+  }
+}

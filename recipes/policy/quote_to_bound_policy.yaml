@@ -1,0 +1,34 @@
+id: policy.quote_to_bound_policy
+version: "4.0"
+kind: attribute
+status: verified
+use_scope: [exploratory_bi]
+owner: policy-domain-owner
+description: >
+  Resolves the keyed relationship from a quote journey to its bound policy,
+  when one exists, as of the knowledge cutoff.
+parameters:
+  - name: knowledge_cutoff
+    type: date
+    required: true
+    description: Point-in-time cutoff for the resolution.
+grain: quote_journey
+time_semantics:
+  knowledge_cutoff_param: knowledge_cutoff
+  as_of_behavior: point_in_time
+output:
+  - name: quote_journey_id
+    type: string
+  - name: bound_policy_id
+    type: string
+  - name: is_bound
+    type: boolean
+implementation:
+  engine: snowflake
+  source_table: POLICY_FDP.POLICY
+  join_keys: [quote_journey_id]
+tests:
+  - quote_to_bound_policy_unbound_returns_null
+  - quote_to_bound_policy_late_bind_after_cutoff_excluded
+limitations:
+  - A quote bound after the knowledge cutoff resolves as not-yet-bound for that cutoff.

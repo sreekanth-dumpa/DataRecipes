@@ -1,0 +1,6 @@
+recipe: quote.bind_rate_by_young_driver@1.0
+resolved:
+  policy.quote_to_bound_policy: '4.0'
+  quote.bind_rate_by_young_driver: '1.0'
+  quote.eligible_journey: '2.1'
+  quote.young_driver_indicator: '1.4'

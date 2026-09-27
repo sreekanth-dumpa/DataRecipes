@@ -1,0 +1,26 @@
+id: quote.product_version_at_quote_time
+version: "1.0"
+kind: attribute
+status: verified
+use_scope: [exploratory_bi]
+owner: quote-domain-owner
+description: >
+  Resolves the product version in effect at the moment a quote journey was
+  created, distinct from the product version in effect at the knowledge cutoff.
+parameters: []
+grain: quote_journey
+time_semantics:
+  as_of_behavior: point_in_time
+output:
+  - name: quote_journey_id
+    type: string
+  - name: product_version
+    type: string
+implementation:
+  engine: snowflake
+  source_table: QUOTE_FDP.QUOTE_JOURNEY
+  join_keys: []
+tests:
+  - product_version_at_quote_time_mid_cycle_change
+limitations:
+  - Resolves at quote-creation time only; does not track subsequent product-version changes on the same journey.

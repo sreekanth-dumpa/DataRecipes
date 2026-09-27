@@ -1,0 +1,21 @@
+fixture: eligible_journey_boundary_cutoff
+recipe: quote.eligible_journey@2.1
+kind: boundary_case
+description: >
+  A journey created exactly on knowledge_cutoff should be included; one
+  created one day after should not.
+input:
+  knowledge_cutoff: "2026-08-31"
+  cohort_start: "2026-08-01"
+  cohort_end: "2026-08-31"
+  synthetic_journeys:
+    - quote_journey_id: "Q-ON-CUTOFF"
+      journey_date: "2026-08-31"
+    - quote_journey_id: "Q-AFTER-CUTOFF"
+      journey_date: "2026-09-01"
+expected:
+  - quote_journey_id: "Q-ON-CUTOFF"
+    is_eligible: true
+  - quote_journey_id: "Q-AFTER-CUTOFF"
+    is_eligible: false
+status: not_executed  # no live Snowflake connection wired in this POC pass

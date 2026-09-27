@@ -1,0 +1,27 @@
+id: quote.young_driver_indicator
+version: "1.4"
+kind: attribute
+status: verified
+use_scope: [exploratory_bi]
+owner: quote-domain-owner
+description: >
+  Indicates whether a quote journey's rated driver population includes a
+  young driver, per the current underwriting age threshold.
+parameters: []
+grain: quote_journey
+time_semantics:
+  as_of_behavior: latest
+output:
+  - name: quote_journey_id
+    type: string
+  - name: young_driver_segment
+    type: string
+    unit: category
+implementation:
+  engine: snowflake
+  source_table: QUOTE_FDP.RATED_DRIVER
+  join_keys: [quote_journey_id]
+tests:
+  - young_driver_indicator_threshold_boundary
+limitations:
+  - Threshold is a single enterprise-wide age cutoff; does not vary by product version.

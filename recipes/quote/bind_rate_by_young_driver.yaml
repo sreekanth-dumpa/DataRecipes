@@ -1,0 +1,50 @@
+id: quote.bind_rate_by_young_driver
+version: "1.0"
+kind: metric
+status: exploratory
+use_scope: [exploratory_bi]
+owner: quote-domain-owner
+description: >
+  Bound journeys divided by eligible journeys, segmented by product version,
+  month, and young-driver segment.
+parameters:
+  - name: cohort_start
+    type: date
+    required: true
+  - name: cohort_end
+    type: date
+    required: true
+  - name: knowledge_cutoff
+    type: date
+    required: true
+uses:
+  - ref: quote.eligible_journey@2.1
+    as: eligible
+  - ref: policy.quote_to_bound_policy@4.0
+    as: binding
+  - ref: quote.young_driver_indicator@1.4
+    as: segment
+grain: product_version x month x young_driver_segment
+time_semantics:
+  knowledge_cutoff_param: knowledge_cutoff
+  as_of_behavior: point_in_time
+output:
+  - name: eligible_count
+    type: int
+  - name: bound_count
+    type: int
+  - name: bind_rate
+    type: float
+    unit: ratio
+implementation:
+  engine: snowflake
+  join_on: [quote_journey_id]
+  group_by: ["segment.young_driver_segment"]
+  output_expressions:
+    eligible_count: "COUNT(DISTINCT CASE WHEN eligible.is_eligible THEN eligible.quote_journey_id END)"
+    bound_count: "COUNT(DISTINCT CASE WHEN binding.is_bound THEN binding.quote_journey_id END)"
+    bind_rate: "bound_count / NULLIF(eligible_count, 0)"
+tests:
+  - bind_rate_by_young_driver_reconciles_to_independent_reference
+limitations:
+  - Denominator is eligible journeys as of the cutoff; does not restate prior cutoffs.

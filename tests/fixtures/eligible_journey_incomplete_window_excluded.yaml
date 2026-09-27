@@ -1,0 +1,17 @@
+fixture: eligible_journey_incomplete_window_excluded
+recipe: quote.eligible_journey@2.1
+kind: boundary_case
+description: >
+  A journey still within its decision window as of the knowledge cutoff
+  (no bind/decline recorded yet) is excluded with exclusion_reason set,
+  not silently counted as ineligible-and-decided.
+input:
+  knowledge_cutoff: "2026-08-31"
+  synthetic_journeys:
+    - quote_journey_id: "Q-INCOMPLETE"
+      decision_window_open: true
+expected:
+  - quote_journey_id: "Q-INCOMPLETE"
+    is_eligible: false
+    exclusion_reason: "decision_window_incomplete"
+status: not_executed

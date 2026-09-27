@@ -1,0 +1,12 @@
+fixture: quote_to_bound_policy_unbound_returns_null
+recipe: policy.quote_to_bound_policy@4.0
+kind: boundary_case
+description: A quote journey with no bound policy resolves bound_policy_id to null and is_bound to false, not an error.
+input:
+  synthetic_journeys:
+    - quote_journey_id: "Q-NEVER-BOUND"
+expected:
+  - quote_journey_id: "Q-NEVER-BOUND"
+    bound_policy_id: null
+    is_bound: false
+status: not_executed

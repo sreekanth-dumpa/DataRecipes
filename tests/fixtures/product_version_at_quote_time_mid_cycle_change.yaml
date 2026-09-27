@@ -1,0 +1,19 @@
+fixture: product_version_at_quote_time_mid_cycle_change
+recipe: quote.product_version_at_quote_time@1.0
+kind: boundary_case
+description: >
+  A journey created the same day a new product version goes into effect
+  resolves the product_version in effect at quote-creation time, not the
+  version in effect at the knowledge cutoff (Section 11 distinguishes
+  these explicitly).
+input:
+  synthetic_journeys:
+    - quote_journey_id: "Q-MID-CYCLE"
+      journey_date: "2026-08-15"
+      product_version_effective_dates:
+        v1: {from: "2026-01-01", to: "2026-08-14"}
+        v2: {from: "2026-08-15", to: null}
+expected:
+  - quote_journey_id: "Q-MID-CYCLE"
+    product_version: "v2"
+status: not_executed

@@ -1,0 +1,43 @@
+id: quote.eligible_journey
+version: "2.1"
+kind: population
+status: verified
+use_scope: [exploratory_bi]
+owner: quote-domain-owner
+description: >
+  New-business quote journeys eligible for bind-rate and related metrics,
+  excluding journeys whose decision window is incomplete as of the knowledge
+  cutoff.
+parameters:
+  - name: cohort_start
+    type: date
+    required: true
+    description: Inclusive start of the quote-journey cohort window.
+  - name: cohort_end
+    type: date
+    required: true
+    description: Inclusive end of the quote-journey cohort window.
+  - name: knowledge_cutoff
+    type: date
+    required: true
+    description: Point-in-time cutoff; journeys with an incomplete decision window as of this date are excluded.
+grain: quote_journey
+time_semantics:
+  knowledge_cutoff_param: knowledge_cutoff
+  as_of_behavior: point_in_time
+output:
+  - name: quote_journey_id
+    type: string
+  - name: is_eligible
+    type: boolean
+  - name: exclusion_reason
+    type: string
+implementation:
+  engine: snowflake
+  source_table: QUOTE_FDP.QUOTE_JOURNEY
+  join_keys: []
+tests:
+  - eligible_journey_boundary_cutoff
+  - eligible_journey_incomplete_window_excluded
+limitations:
+  - Does not evaluate renewal or endorsement journeys, only new-business.

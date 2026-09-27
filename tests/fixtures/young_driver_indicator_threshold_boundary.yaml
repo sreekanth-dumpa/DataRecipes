@@ -1,0 +1,12 @@
+fixture: young_driver_indicator_threshold_boundary
+recipe: quote.young_driver_indicator@1.4
+kind: boundary_case
+description: A rated driver exactly at the enterprise young-driver age threshold is classified consistently with the documented boundary (inclusive or exclusive, per underwriting definition).
+input:
+  synthetic_drivers:
+    - quote_journey_id: "Q-BOUNDARY-AGE"
+      driver_age_at_threshold: true
+expected:
+  - quote_journey_id: "Q-BOUNDARY-AGE"
+    young_driver_segment: "young_driver"
+status: not_executed

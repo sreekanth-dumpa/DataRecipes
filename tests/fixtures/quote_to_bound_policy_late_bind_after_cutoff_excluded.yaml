@@ -1,0 +1,20 @@
+fixture: quote_to_bound_policy_late_bind_after_cutoff_excluded
+recipe: policy.quote_to_bound_policy@4.0
+kind: reconciliation_case
+description: >
+  A quote bound after the knowledge_cutoff resolves as not-yet-bound for
+  that cutoff (per the recipe's stated limitation), so re-running with a
+  later cutoff for the same journey changes the result -- this is
+  expected, not a data-quality defect.
+input:
+  synthetic_journeys:
+    - quote_journey_id: "Q-LATE-BIND"
+      bind_date: "2026-09-05"
+  knowledge_cutoff_a: "2026-08-31"
+  knowledge_cutoff_b: "2026-09-10"
+expected:
+  at_cutoff_a:
+    is_bound: false
+  at_cutoff_b:
+    is_bound: true
+status: not_executed
