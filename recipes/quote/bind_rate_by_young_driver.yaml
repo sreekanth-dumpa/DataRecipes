@@ -17,6 +17,10 @@ parameters:
   - name: knowledge_cutoff
     type: date
     required: true
+  - name: product_line
+    type: enum
+    required: true
+    description: Passed through to quote.eligible_journey; this metric is Auto-specific in practice (young-driver segmentation), so callers pass AUTO.
 uses:
   - ref: quote.eligible_journey@2.1
     as: eligible
@@ -37,7 +41,6 @@ output:
     type: float
     unit: ratio
 implementation:
-  engine: snowflake
   join_on: [quote_journey_id]
   group_by: ["segment.young_driver_segment"]
   output_expressions:

@@ -5,3 +5,6 @@ uvicorn[standard]
 streamlit
 requests
 pytest
+duckdb
+numpy
+pandas

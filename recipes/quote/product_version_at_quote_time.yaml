@@ -17,9 +17,11 @@ output:
   - name: product_version
     type: string
 implementation:
-  engine: snowflake
-  source_table: QUOTE_FDP.QUOTE_JOURNEY
-  join_keys: []
+  engines:
+    duckdb:
+      source_table: quote_fdp.quote_journey
+    snowflake:
+      source_table: QUOTE_FDP.QUOTE_JOURNEY
 tests:
   - product_version_at_quote_time_mid_cycle_change
 limitations:

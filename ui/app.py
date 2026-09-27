@@ -104,16 +104,33 @@ with tab_builder:
                 st.error(f"Could not reach builder API at {API_URL}: {e}")
 
 with tab_test:
-    st.subheader("Run declared fixtures")
-    st.caption("Section 6.4: analyst test workbench. POC status: resolves fixtures via /recipes/test; does not execute against live Snowflake yet.")
+    st.subheader("Run against the warehouse")
+    st.caption("Section 6.4: analyst test workbench. With parameters, /recipes/test compiles the recipe for duckdb and executes it for real against data/warehouse.duckdb.")
     recipe_key = st.text_input("Recipe key (id@version)", value="quote.bind_rate_by_young_driver@1.0")
+    params_json = st.text_area(
+        "Parameters (JSON, optional -- omit to just resolve declared fixtures without executing)",
+        value='{"cohort_start": "2026-07-01", "cohort_end": "2026-07-31", "knowledge_cutoff": "2026-08-31", "product_line": "AUTO"}',
+        height=100,
+    )
     if st.button("Run test suite"):
         try:
-            resp = requests.post(f"{API_URL}/recipes/test", json={"recipe_key": recipe_key}, timeout=10)
-            resp.raise_for_status()
-            st.json(resp.json())
-        except requests.RequestException as e:
-            st.error(f"Could not reach builder API at {API_URL}: {e}")
+            params = yaml.safe_load(params_json) if params_json.strip() else None
+        except yaml.YAMLError as e:
+            st.error(f"Invalid JSON/YAML params: {e}")
+        else:
+            try:
+                body = {"recipe_key": recipe_key}
+                if params:
+                    body["params"] = params
+                resp = requests.post(f"{API_URL}/recipes/test", json=body, timeout=10)
+                resp.raise_for_status()
+                result = resp.json()
+                if result.get("execution"):
+                    st.success("Executed against the real warehouse:")
+                    st.dataframe(result["execution"], width="stretch")
+                st.json(result)
+            except requests.RequestException as e:
+                st.error(f"Could not reach builder API at {API_URL}: {e}")
 
     st.divider()
     st.subheader("Agentic authoring assistant")

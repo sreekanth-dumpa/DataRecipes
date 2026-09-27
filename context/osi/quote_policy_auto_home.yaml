@@ -1,0 +1,353 @@
+# yaml-language-server: $schema=../../../OSI/core-spec/ossie-schema.json
+#
+# Open Semantic Interchange (OSI / Apache Ossie Core Metadata Spec) context
+# for the synthetic Auto + Home Quote/Policy warehouse (data/warehouse.duckdb).
+#
+# This is the Section 6.1 "context and FDP adapter" input: it is what
+# builder/context_adapter/osi_adapter.py reads to produce SourceDescriptor
+# objects, replacing the earlier hardcoded stub now that a real warehouse
+# and a real context format exist.
+#
+# Spec: https://github.com/open-semantic-interchange/OSI (core-spec/spec.yaml)
+
+version: "0.2.0.dev0"
+
+name: quote_policy_auto_home
+description: >
+  Quote and Policy FDP semantic model for the Auto and Home product lines,
+  covering new-business quote journeys, Auto driver rating, Home dwelling
+  rating, and bound-policy resolution.
+ai_context:
+  instructions: >
+    Use this semantic model to answer questions about new-business Auto and
+    Home quote journeys: eligibility, bind rates, young-driver segmentation
+    (Auto only), dwelling characteristics (Home only), and product-version
+    mix. quote_journey is the fact table both lines share; rated_driver and
+    rated_dwelling are line-specific extensions (a journey has a row in at
+    most one of the two, matching its product_line). policy resolves the
+    bound-policy outcome for a journey, if any, as of a point in time.
+  synonyms:
+    - "Quote and Policy FDP context"
+    - "Auto and Home data warehouse"
+
+datasets:
+  - name: quote_journey
+    source: quote_fdp.quote_journey
+    primary_key: [quote_journey_id]
+    unique_keys:
+      - [quote_journey_id]
+    description: >
+      New-business quote journeys for both Auto and Home, one row per
+      journey. Eligibility (is_eligible/exclusion_reason) is pre-derived at
+      the FDP layer from decision-window state as of effective_date.
+    ai_context:
+      synonyms: ["quote journeys", "new business quotes", "journeys"]
+    fields:
+      - name: quote_journey_id
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: quote_journey_id}
+        description: Business key for the quote journey.
+        datatype: String
+        ai_context: {synonyms: ["journey ID", "quote ID"]}
+
+      - name: product_line
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: product_line}
+        description: "AUTO or HOME."
+        datatype: String
+        dimension: {is_time: false}
+        ai_context: {synonyms: ["line of business", "LOB"]}
+
+      - name: product_version
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: product_version}
+        description: Product version in effect for this journey's line (e.g. AUTO-v1, HOME-v2).
+        datatype: String
+        dimension: {is_time: false}
+        ai_context: {synonyms: ["rate version", "form version"]}
+
+      - name: journey_date
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: journey_date}
+        description: Date the quote journey was created.
+        datatype: Date
+        ai_context: {synonyms: ["quote date", "creation date"]}
+
+      - name: effective_date
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: effective_date}
+        description: >
+          Date this journey's eligibility state (is_eligible/exclusion_reason)
+          became knowable -- i.e. when its decision window closed. Used as
+          the as-of column for knowledge_cutoff filtering.
+        datatype: Date
+        ai_context: {synonyms: ["as-of date", "knowledge cutoff basis"]}
+
+      - name: decision_window_open
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: decision_window_open}
+        description: True if the journey's bind/decline decision had not yet been recorded as of effective_date.
+        datatype: Boolean
+        dimension: {is_time: false}
+
+      - name: is_eligible
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: is_eligible}
+        description: Pre-derived eligibility flag for bind-rate and related metrics.
+        datatype: Boolean
+        dimension: {is_time: false}
+        ai_context: {synonyms: ["eligible", "in scope for bind rate"]}
+
+      - name: exclusion_reason
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: exclusion_reason}
+        description: "Reason a journey is excluded, when is_eligible is false: decision_window_incomplete or withdrawn_pre_bind."
+        datatype: String
+
+      - name: state
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: state}
+        description: US state of the risk.
+        datatype: String
+        dimension: {is_time: false}
+
+      - name: channel
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: channel}
+        description: "Distribution channel: EA (Exclusive Agent), IA (Independent Agent), or DIRECT."
+        datatype: String
+        dimension: {is_time: false}
+        ai_context: {synonyms: ["distribution channel"]}
+
+  - name: rated_driver
+    source: quote_fdp.rated_driver
+    primary_key: [quote_journey_id]
+    unique_keys:
+      - [quote_journey_id]
+    description: >
+      AUTO-only. One row per Auto quote journey, carrying the pre-derived
+      young-driver segment for that journey (not a per-driver detail table).
+    ai_context:
+      synonyms: ["driver rating", "young driver indicator"]
+    fields:
+      - name: quote_journey_id
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: quote_journey_id}
+        description: Foreign key to quote_journey.
+        datatype: String
+
+      - name: primary_driver_age
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: primary_driver_age}
+        description: Age of the primary rated driver on the journey.
+        datatype: Integer
+
+      - name: is_young_driver
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: is_young_driver}
+        description: True when primary_driver_age is under the enterprise young-driver threshold (25).
+        datatype: Boolean
+        dimension: {is_time: false}
+
+      - name: young_driver_segment
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: young_driver_segment}
+        description: "young_driver or standard."
+        datatype: String
+        dimension: {is_time: false}
+        ai_context: {synonyms: ["driver segment", "age segment"]}
+
+  - name: rated_dwelling
+    source: quote_fdp.rated_dwelling
+    primary_key: [quote_journey_id]
+    unique_keys:
+      - [quote_journey_id]
+    description: HOME-only. One row per Home quote journey, carrying dwelling rating attributes.
+    ai_context:
+      synonyms: ["dwelling rating", "home rating"]
+    fields:
+      - name: quote_journey_id
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: quote_journey_id}
+        description: Foreign key to quote_journey.
+        datatype: String
+
+      - name: construction_type
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: construction_type}
+        description: "Frame, Masonry, or Brick Veneer."
+        datatype: String
+        dimension: {is_time: false}
+
+      - name: year_built
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: year_built}
+        description: Year the dwelling was built.
+        datatype: Integer
+        dimension: {is_time: true}
+        ai_context: {synonyms: ["construction year"]}
+
+      - name: roof_age_years
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: roof_age_years}
+        description: Roof age in years as of the warehouse extract date.
+        datatype: Integer
+
+      - name: dwelling_coverage_amount
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: dwelling_coverage_amount}
+        description: Coverage A (dwelling) limit quoted.
+        datatype: Decimal
+        ai_context: {synonyms: ["coverage A", "dwelling limit"]}
+
+  - name: policy
+    source: policy_fdp.policy
+    primary_key: [quote_journey_id]
+    unique_keys:
+      - [quote_journey_id]
+    description: >
+      Current-state bound-policy resolution per journey, both lines.
+      effective_date is set to bind_date when bound (so a knowledge_cutoff
+      before the bind correctly excludes it) and to the journey's own
+      effective_date otherwise.
+    ai_context:
+      synonyms: ["bound policy", "quote-to-bound-policy mapping"]
+    fields:
+      - name: quote_journey_id
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: quote_journey_id}
+        description: Foreign key to quote_journey.
+        datatype: String
+
+      - name: bound_policy_id
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: bound_policy_id}
+        description: Bound policy business key, null if never bound.
+        datatype: String
+
+      - name: is_bound
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: is_bound}
+        description: True if the journey resulted in a bound policy as of effective_date.
+        datatype: Boolean
+        dimension: {is_time: false}
+
+      - name: bind_date
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: bind_date}
+        description: Date the policy was bound, null if never bound.
+        datatype: Date
+
+      - name: effective_date
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: effective_date}
+        description: As-of column for point-in-time resolution of this row's state.
+        datatype: Date
+
+      - name: product_line
+        expression:
+          dialects:
+            - {dialect: ANSI_SQL, expression: product_line}
+        description: Denormalized from quote_journey for convenience.
+        datatype: String
+        dimension: {is_time: false}
+
+relationships:
+  - name: quote_journey_to_rated_driver
+    from: quote_journey
+    to: rated_driver
+    from_columns: [quote_journey_id]
+    to_columns: [quote_journey_id]
+    ai_context:
+      synonyms: ["journey to driver rating"]
+
+  - name: quote_journey_to_rated_dwelling
+    from: quote_journey
+    to: rated_dwelling
+    from_columns: [quote_journey_id]
+    to_columns: [quote_journey_id]
+    ai_context:
+      synonyms: ["journey to dwelling rating"]
+
+  - name: quote_journey_to_policy
+    from: quote_journey
+    to: policy
+    from_columns: [quote_journey_id]
+    to_columns: [quote_journey_id]
+    ai_context:
+      synonyms: ["quote to bound policy"]
+
+metrics:
+  - name: eligible_journey_count
+    expression:
+      dialects:
+        - {dialect: ANSI_SQL, expression: "COUNT(DISTINCT CASE WHEN quote_journey.is_eligible THEN quote_journey.quote_journey_id END)"}
+    description: Count of journeys eligible for bind-rate metrics (requires grouping by product_line, journey_date range).
+    datatype: Integer
+    ai_context: {synonyms: ["eligible count", "denominator"]}
+
+  - name: overall_bind_rate
+    expression:
+      dialects:
+        - {dialect: ANSI_SQL, expression: "COUNT(DISTINCT CASE WHEN policy.is_bound THEN policy.quote_journey_id END)::DOUBLE / NULLIF(COUNT(DISTINCT CASE WHEN quote_journey.is_eligible THEN quote_journey.quote_journey_id END), 0)"}
+    description: Bound journeys over eligible journeys, any segmentation (requires grouping by product_line).
+    datatype: Float
+    ai_context: {synonyms: ["bind rate", "close rate"]}
+
+  - name: young_driver_bind_rate
+    expression:
+      dialects:
+        - {dialect: ANSI_SQL, expression: "COUNT(DISTINCT CASE WHEN policy.is_bound AND rated_driver.is_young_driver THEN policy.quote_journey_id END)::DOUBLE / NULLIF(COUNT(DISTINCT CASE WHEN quote_journey.is_eligible AND rated_driver.is_young_driver THEN quote_journey.quote_journey_id END), 0)"}
+    description: >
+      Auto only. Corresponds to quote.bind_rate_by_young_driver's
+      young_driver segment (this metric is the OSI-context restatement of
+      the recipe's own computation, useful for independent reconciliation).
+    datatype: Float
+    ai_context: {synonyms: ["young driver bind rate"]}
+
+  - name: average_dwelling_coverage
+    expression:
+      dialects:
+        - {dialect: ANSI_SQL, expression: "AVG(rated_dwelling.dwelling_coverage_amount)"}
+    description: Home only. Average Coverage A amount across rated dwellings.
+    datatype: Decimal
+    ai_context: {synonyms: ["average coverage A", "average dwelling limit"]}
+
+custom_extensions:
+  - vendor_name: DATARECIPES
+    data: |
+      {
+        "consuming_recipes": [
+          "quote.eligible_journey@2.1",
+          "policy.quote_to_bound_policy@4.0",
+          "quote.young_driver_indicator@1.4",
+          "quote.product_version_at_quote_time@1.0",
+          "quote.bind_rate_by_young_driver@1.0"
+        ],
+        "warehouse_path": "data/warehouse.duckdb",
+        "generator": "data/generate_synthetic_data.py"
+      }

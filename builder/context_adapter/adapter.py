@@ -8,13 +8,16 @@ source descriptors and evidence references, read with least privilege,
 with no source data copied into the recipe registry.
 
 STUB STATUS: the real Kairos context folder path was not available when
-this pass was built (per plan review). This module returns hardcoded
-placeholder descriptors for exactly the source tables the five seed
-recipes reference, so the builder and recipe authoring flow have
-something to bind against. Every field below is marked stub=True.
-Swap in a real implementation by replacing StubContextAdapter with one
-that reads the actual context folder / Snowflake INFORMATION_SCHEMA /
-Glue Catalog, keeping the same SourceDescriptor shape.
+this module was first built (per plan review). It returns hardcoded
+placeholder descriptors, every field marked stub=True.
+
+SUPERSEDED for the synthetic Auto+Home warehouse: see osi_adapter.py's
+OSIContextAdapter, which reads real context from
+context/osi/quote_policy_auto_home.yaml (a genuine OSI/Apache Ossie
+document, schema-validated) for quote_journey, rated_driver,
+rated_dwelling and policy. This stub remains as a fallback shape for any
+table not yet covered by a real OSI context file, and as the reference
+for what a from-scratch implementation should return.
 """
 from __future__ import annotations
 

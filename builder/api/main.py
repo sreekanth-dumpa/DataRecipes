@@ -26,6 +26,8 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from validator.validate import validate, load_recipes  # noqa: E402
 from registry.build_index import DEFAULT_DB_PATH  # noqa: E402
+from compiler.sql_compiler import compile_recipe  # noqa: E402
+from builder.db import duckdb_runner  # noqa: E402
 
 RECIPES_DIR = REPO_ROOT / "recipes"
 
@@ -102,7 +104,12 @@ def validate_recipe(req: ValidateRequest) -> ValidateResponse:
 class TestRequest(BaseModel):
     recipe_key: str = Field(..., description="id@version, e.g. quote.bind_rate_by_young_driver@1.0")
     test_suite: list[str] | None = Field(None, description="Fixture names to run; defaults to all fixtures declared on the recipe.")
-    input_cutoff: str | None = Field(None, description="Knowledge cutoff date (ISO 8601) to run fixtures against.")
+    params: dict[str, str] | None = Field(
+        None,
+        description="Recipe parameter bindings (cohort_start, cohort_end, knowledge_cutoff, product_line, ...). "
+                    "When provided, the recipe is compiled for duckdb and actually executed against the warehouse. "
+                    "When omitted, declared fixtures are resolved but not executed (no synthetic rows are staged for them in this pass).",
+    )
 
 
 class TestCaseResult(BaseModel):
@@ -115,15 +122,24 @@ class TestResponse(BaseModel):
     run_id: str
     cases: list[TestCaseResult]
     controls: list[str]
+    execution: list[dict] | None = Field(None, description="Real result rows, present only when params were supplied and execution succeeded.")
 
 
 @app.post("/recipes/test", response_model=TestResponse)
 def test_recipe(req: TestRequest) -> TestResponse:
-    """Section 6.4: analyst test workbench. POC status: this endpoint
-    resolves which fixtures a recipe declares and returns a run record,
-    but does not execute them against live Snowflake data -- no compute
-    connection is wired up yet. Status is reported honestly as
-    'not_executed' rather than faking a pass/fail."""
+    """Section 6.4: analyst test workbench.
+
+    With `params`: compiles the recipe for duckdb and executes it against
+    data/warehouse.duckdb for real -- this is genuine execution, not a
+    simulation, now that a real warehouse exists.
+
+    Without `params`: resolves which fixtures the recipe declares and
+    reports them as 'not_executed'. Fixtures describe boundary/
+    reconciliation cases with small fabricated IDs (see tests/fixtures/)
+    that are not loaded into the real warehouse in this pass, so they are
+    documentation of intended semantics, not something this endpoint can
+    run yet -- staging fixture rows into an isolated schema per test is
+    future work, not simulated here."""
     recipes = load_recipes(RECIPES_DIR)
     match = next((r for r in recipes if r.key == req.recipe_key), None)
     if match is None:
@@ -133,10 +149,26 @@ def test_recipe(req: TestRequest) -> TestResponse:
     suite = req.test_suite if req.test_suite is not None else declared_tests
     unknown = [t for t in suite if t not in declared_tests]
 
+    controls = []
+    execution = None
+
+    if req.params:
+        try:
+            sql = compile_recipe(req.recipe_key, RECIPES_DIR, engine="duckdb")
+            execution = duckdb_runner.execute(sql, req.params)
+            controls.append(f"executed against {duckdb_runner.DEFAULT_DB_PATH.name} with params={req.params}")
+            case_status = "executed"
+        except Exception as e:  # noqa: BLE001 -- surface compile/execution errors as a control, not a 500
+            controls.append(f"execution failed: {e}")
+            case_status = "execution_failed"
+    else:
+        controls.append("no params supplied -- fixtures resolved but not executed (see tests/fixtures/)")
+        case_status = "not_executed"
+
     cases = [
         TestCaseResult(
             fixture=name,
-            status="unknown_fixture" if name in unknown else "not_executed",
+            status="unknown_fixture" if name in unknown else case_status,
             diff=None,
         )
         for name in suite
@@ -145,7 +177,8 @@ def test_recipe(req: TestRequest) -> TestResponse:
     return TestResponse(
         run_id=f"run_{uuid4().hex[:12]}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
         cases=cases,
-        controls=["no live Snowflake connection configured -- fixtures are resolved but not executed"],
+        controls=controls,
+        execution=execution,
     )
 
 

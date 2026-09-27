@@ -18,9 +18,13 @@ output:
     type: string
     unit: category
 implementation:
-  engine: snowflake
-  source_table: QUOTE_FDP.RATED_DRIVER
-  join_keys: [quote_journey_id]
+  engines:
+    duckdb:
+      source_table: quote_fdp.rated_driver
+      join_keys: [quote_journey_id]
+    snowflake:
+      source_table: QUOTE_FDP.RATED_DRIVER
+      join_keys: [quote_journey_id]
 tests:
   - young_driver_indicator_threshold_boundary
 limitations:

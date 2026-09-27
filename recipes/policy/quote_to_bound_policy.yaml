@@ -24,9 +24,13 @@ output:
   - name: is_bound
     type: boolean
 implementation:
-  engine: snowflake
-  source_table: POLICY_FDP.POLICY
-  join_keys: [quote_journey_id]
+  engines:
+    duckdb:
+      source_table: policy_fdp.policy
+      join_keys: [quote_journey_id]
+    snowflake:
+      source_table: POLICY_FDP.POLICY
+      join_keys: [quote_journey_id]
 tests:
   - quote_to_bound_policy_unbound_returns_null
   - quote_to_bound_policy_late_bind_after_cutoff_excluded

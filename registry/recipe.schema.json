@@ -111,13 +111,19 @@
     },
     "implementation": {
       "type": "object",
-      "description": "Executable implementation. Atomic recipes carry a source_table/sql_template; composite recipes derive from 'uses' via the compiler.",
+      "description": "Executable implementation, per target engine. Atomic recipes carry per-engine source tables; composite recipes derive their join/aggregation from 'uses' via the compiler, shared across engines since the expressions here are ANSI-compatible.",
       "additionalProperties": false,
       "properties": {
-        "engine": {"type": "string", "enum": ["snowflake", "python"], "description": "POC Iteration 1 permits snowflake only; python is a later-phase addition."},
-        "source_table": {"type": "string"},
-        "sql_template": {"type": "string", "description": "Path to a .sql.j2 template under compiler/templates/, or inline SQL for simple atomic recipes."},
-        "join_keys": {"type": "array", "items": {"type": "string"}},
+        "engines": {
+          "type": "object",
+          "description": "Per-engine physical binding. Key is the engine name; POC Iteration 1 executes on duckdb. snowflake is declared for later-phase cutover but not wired to a live connection yet.",
+          "additionalProperties": false,
+          "properties": {
+            "duckdb": {"$ref": "#/definitions/engine_binding"},
+            "snowflake": {"$ref": "#/definitions/engine_binding"}
+          },
+          "minProperties": 1
+        },
         "join_on": {
           "type": "array",
           "items": {"type": "string"},
@@ -125,7 +131,7 @@
         },
         "output_expressions": {
           "type": "object",
-          "description": "For composite recipes: maps each declared output field name to a SQL expression over dependency aliases, e.g. {\"bind_rate\": \"bound_count / NULLIF(eligible_count, 0)\"}.",
+          "description": "For composite recipes: maps each declared output field name to a SQL expression over dependency aliases, e.g. {\"bind_rate\": \"bound_count / NULLIF(eligible_count, 0)\"}. Written in ANSI SQL shared across engines.",
           "additionalProperties": {"type": "string"}
         },
         "group_by": {
@@ -159,5 +165,17 @@
       "items": {"type": "string"},
       "description": "Known limitations or exclusions travelling with the recipe (Section 1, explicit scope principle)."
     }
+  },
+  "definitions": {
+    "engine_binding": {
+      "type": "object",
+      "required": ["source_table"],
+      "additionalProperties": false,
+      "properties": {
+        "source_table": {"type": "string", "description": "Fully qualified table for this engine, e.g. quote_fdp.quote_journey (duckdb) or QUOTE_FDP.QUOTE_JOURNEY (snowflake)."},
+        "join_keys": {"type": "array", "items": {"type": "string"}}
+      }
+    }
   }
 }
+

@@ -21,6 +21,10 @@ parameters:
     type: date
     required: true
     description: Point-in-time cutoff; journeys with an incomplete decision window as of this date are excluded.
+  - name: product_line
+    type: enum
+    required: true
+    description: Restricts the population to one product line (AUTO, HOME, ...). Found necessary once run against real multi-line data -- omitting it let other lines leak into a line-specific composite's grain.
 grain: quote_journey
 time_semantics:
   knowledge_cutoff_param: knowledge_cutoff
@@ -33,9 +37,11 @@ output:
   - name: exclusion_reason
     type: string
 implementation:
-  engine: snowflake
-  source_table: QUOTE_FDP.QUOTE_JOURNEY
-  join_keys: []
+  engines:
+    duckdb:
+      source_table: quote_fdp.quote_journey
+    snowflake:
+      source_table: QUOTE_FDP.QUOTE_JOURNEY
 tests:
   - eligible_journey_boundary_cutoff
   - eligible_journey_incomplete_window_excluded
