@@ -1,0 +1,13 @@
+duckdb>=1.1
+pandas>=2.0
+sqlglot>=25
+fastapi>=0.110
+uvicorn[standard]
+pydantic>=2
+streamlit>=1.35
+requests
+httpx
+pytest
+# optional adapters (not needed for the fixture POC or tests)
+# anthropic                    # AIPR_LLM_PROVIDER=anthropic intent proposals
+# snowflake-connector-python   # live Snowflake adapter

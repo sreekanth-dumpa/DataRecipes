@@ -1,0 +1,29 @@
+{
+  "claim_id": "EV-AGG-005",
+  "packets": [
+    "P11",
+    "P10"
+  ],
+  "tier": "attribute",
+  "claim": "Conversion rate = sum(converted) / sum(eligible) over quote-grain outcomes. Persist numerator and denominator; never average subgroup rates. Counts merge across disjoint quote partitions; the rate is recomputed after merging.",
+  "discharges": [
+    "aggregation_behavior"
+  ],
+  "authority": "certified",
+  "version": "2026.08.1",
+  "source_locator": "analytics://metrics/quote_conversion.md#algebra",
+  "scope": {
+    "lob": [
+      "personal_auto"
+    ],
+    "states": [
+      "NC",
+      "SC",
+      "VA"
+    ]
+  },
+  "valid_from": "2026-01-01",
+  "valid_to": null,
+  "knowledge_ts": "2026-08-15T00:00:00Z",
+  "retrieval_cost": 0.5
+}

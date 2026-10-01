@@ -1,0 +1,32 @@
+{
+  "claim_id": "EV-BIND-002",
+  "packets": [
+    "P08",
+    "P12",
+    "P04",
+    "P19"
+  ],
+  "tier": "entity",
+  "claim": "bind_event.quote_id links each bind to a business quote (one-to-many: a quote may have several BIND events). A quote converts when at least one BIND event falls inside the observation window and was recorded by the cutoff. A later CANCEL does not negate the bind in recipe version 1.x.",
+  "discharges": [
+    "bind_linkage",
+    "cancellation_treatment"
+  ],
+  "authority": "certified",
+  "version": "2026.08.1",
+  "source_locator": "policy_fdp://contracts/bind_event.md#linkage",
+  "scope": {
+    "lob": [
+      "personal_auto"
+    ],
+    "states": [
+      "NC",
+      "SC",
+      "VA"
+    ]
+  },
+  "valid_from": "2026-01-01",
+  "valid_to": null,
+  "knowledge_ts": "2026-08-15T00:00:00Z",
+  "retrieval_cost": 1.0
+}

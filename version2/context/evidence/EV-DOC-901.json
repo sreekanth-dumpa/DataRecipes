@@ -1,0 +1,32 @@
+{
+  "claim_id": "EV-DOC-901",
+  "packets": [
+    "P20"
+  ],
+  "tier": "data_product",
+  "claim": "Team wiki: quote conversion is usually measured when the policy is issued, about 30 days after the quote; conversion rate by product version and channel.",
+  "discharges": [
+    "bind_linkage",
+    "aggregation_behavior"
+  ],
+  "authority": "corroborating",
+  "version": "wiki-2025-11",
+  "source_locator": "wiki://pricing/notes/conversion.md",
+  "scope": {
+    "lob": [
+      "personal_auto"
+    ],
+    "states": [
+      "NC",
+      "SC",
+      "VA"
+    ]
+  },
+  "valid_from": "2025-01-01",
+  "valid_to": null,
+  "knowledge_ts": "2025-11-01T00:00:00Z",
+  "retrieval_cost": 0.2,
+  "conflicts_with": {
+    "bind_linkage": "defines conversion by policy issuance, not bind"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "policy_version": "access-2026.09.0",
+  "tenant": "farmers",
+  "subjects": {
+    "analyst_nc": {"display": "NC pricing analyst", "purposes": ["pricing_review"], "row_filter": {"state": ["NC"]}, "capabilities": ["read_source", "write_stage"]},
+    "analyst_all": {"display": "Regional pricing analyst", "purposes": ["pricing_review", "regulatory_review"], "row_filter": {"state": ["NC", "SC", "VA"]}, "capabilities": ["read_source", "write_stage"]},
+    "analyst_nc_2": {"display": "Second NC pricing analyst (same entitlements)", "purposes": ["pricing_review"], "row_filter": {"state": ["NC"]}, "capabilities": ["read_source", "write_stage"]},
+    "viewer": {"display": "Read-only viewer", "purposes": ["pricing_review"], "row_filter": {"state": []}, "capabilities": []}
+  }
+}

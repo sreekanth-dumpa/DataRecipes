@@ -1,0 +1,33 @@
+{
+  "claim_id": "EV-QID-001",
+  "packets": [
+    "P04",
+    "P05",
+    "P06",
+    "P07"
+  ],
+  "tier": "entity",
+  "claim": "quote_id identifies a business quote; quote_iteration rows are its versions. The canonical quote is the first ISSUED, eligible iteration recorded by the knowledge cutoff, ordered by issue_date then iteration_no. Product version, channel and state are attributed from that canonical iteration; channel codes resolve through ref.channel_crosswalk and unmapped codes are reported as 'unknown'.",
+  "discharges": [
+    "quote_identity",
+    "product_version_attribution",
+    "dimension_semantics"
+  ],
+  "authority": "certified",
+  "version": "2026.08.1",
+  "source_locator": "quote_fdp://contracts/quote_identity.md#canonical",
+  "scope": {
+    "lob": [
+      "personal_auto"
+    ],
+    "states": [
+      "NC",
+      "SC",
+      "VA"
+    ]
+  },
+  "valid_from": "2026-01-01",
+  "valid_to": null,
+  "knowledge_ts": "2026-08-15T00:00:00Z",
+  "retrieval_cost": 1.0
+}

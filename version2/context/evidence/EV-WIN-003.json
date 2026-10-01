@@ -1,0 +1,31 @@
+{
+  "claim_id": "EV-WIN-003",
+  "packets": [
+    "P07",
+    "P11",
+    "P09"
+  ],
+  "tier": "attribute",
+  "claim": "The observation window is measured in calendar days from quote issue date, inclusive of the end day. Effective time is bind_date; knowledge time is recorded_at. A quote is mature only when issue_date + window <= date(cutoff); immature quotes are excluded from both numerator and denominator and disclosed.",
+  "discharges": [
+    "observation_window",
+    "temporal_knowledge_basis"
+  ],
+  "authority": "certified",
+  "version": "2026.08.1",
+  "source_locator": "analytics://metrics/quote_conversion.md#window",
+  "scope": {
+    "lob": [
+      "personal_auto"
+    ],
+    "states": [
+      "NC",
+      "SC",
+      "VA"
+    ]
+  },
+  "valid_from": "2026-01-01",
+  "valid_to": null,
+  "knowledge_ts": "2026-08-15T00:00:00Z",
+  "retrieval_cost": 1.0
+}

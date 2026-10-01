@@ -1,0 +1,31 @@
+{
+  "claim_id": "EV-AUTH-004",
+  "packets": [
+    "P01",
+    "P15",
+    "P16"
+  ],
+  "tier": "data_product",
+  "claim": "src_quote.quote_iteration (quote_fdp) and src_policy.bind_event (policy_fdp) are the authoritative sources for personal auto quotes and binds. Reads are row-restricted by state entitlement; derived stage relations inherit the source row policy; results may only be cached with the producer's access fingerprint.",
+  "discharges": [
+    "source_authority",
+    "access_enforcement"
+  ],
+  "authority": "certified",
+  "version": "2026.09.0",
+  "source_locator": "governance://products/quote_policy_access.md",
+  "scope": {
+    "lob": [
+      "personal_auto"
+    ],
+    "states": [
+      "NC",
+      "SC",
+      "VA"
+    ]
+  },
+  "valid_from": "2026-01-01",
+  "valid_to": null,
+  "knowledge_ts": "2026-09-01T00:00:00Z",
+  "retrieval_cost": 1.5
+}

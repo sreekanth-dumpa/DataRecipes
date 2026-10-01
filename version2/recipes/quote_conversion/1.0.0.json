@@ -1,0 +1,56 @@
+{
+  "id": "quote_conversion",
+  "version": "1.0.0",
+  "owner": "pricing-analytics (business owner) / data-platform (technical owner)",
+  "certification": {"status": "certified", "policy": "certified_rules_and_fixture_oracle", "certified_at": "2026-09-01"},
+  "summary": "Share of first eligible issued personal auto quotes that receive a known bind event within N calendar days of quote issue.",
+  "intent_patterns": [
+    "quote conversion", "quote to bind", "conversion rate", "bind rate", "quote-to-bind conversion"
+  ],
+  "metric": "quote_conversion",
+  "population": "first_eligible_issued_personal_auto_quote",
+  "definitions": {
+    "quote_identity": "quote_id is the business quote; iterations are versions of one quote",
+    "canonical_quote": "the first ISSUED and eligible iteration known by the knowledge cutoff, ordered by issue_date then iteration_no",
+    "numerator_event": "bind_event with event_type BIND",
+    "conversion": "EXISTS a BIND event with bind_date in [issue_date, issue_date + window] recorded by the cutoff",
+    "cancelled_binds": "a later CANCEL does not negate a bind (v1.0.0)",
+    "version_attribution": "product_version of the canonical (first eligible issued) iteration",
+    "maturity": "a quote is mature when issue_date + window <= date(knowledge_cutoff); immature quotes are excluded from numerator and denominator and counted separately",
+    "unknown_channel": "channel codes without a crosswalk entry are reported as 'unknown', never dropped"
+  },
+  "options": {
+    "conversion_event": {"supported": ["bind_event"], "rejected": {"policy_issuance": "No certified rule maps policy issuance to quote conversion in v1.0.0"}},
+    "day_basis": {"supported": ["calendar_day"], "rejected": {"elapsed_24h": "Elapsed-hour windows are not part of the certified algebra"}},
+    "version_attribution": {"supported": ["first_eligible_issued_iteration"], "rejected": {"latest_iteration": "Latest-version attribution changes the population grain and is not certified"}},
+    "cancelled_binds": {"supported": ["count_bind_regardless_of_later_cancellation"], "rejected": {"exclude_cancelled": "No certified rule resolves cancelled binds as of the cutoff"}},
+    "maturity_policy": {"supported": ["exclude_without_complete_window"], "rejected": {"censored_cohort_report": "Censored cohort reporting is a different approved metric that is not installed", "include_immature": "Including immature quotes biases the denominator; not admitted"}},
+    "quote_identity": {"supported": ["business_quote"], "rejected": {"quote_iteration": "Counting iterations changes the population grain"}}
+  },
+  "parameters": {
+    "state": {"type": "enum", "values": ["NC", "SC", "VA"]},
+    "lob": {"type": "enum", "values": ["personal_auto"]},
+    "cohort_start": {"type": "date"},
+    "cohort_end": {"type": "date"},
+    "window_days": {"type": "int", "min": 1, "max": 90},
+    "knowledge_cutoff": {"type": "timestamp"}
+  },
+  "dimensions": {"allowed": ["product_version", "channel", "state"], "max": 3},
+  "output_grain_rule": "output grain equals the requested dimensions",
+  "input_authorities": {
+    "quote_iterations": {"relation": "src_quote.quote_iteration", "authority": "quote_fdp", "grain": ["quote_id", "iteration_no"]},
+    "bind_events": {"relation": "src_policy.bind_event", "authority": "policy_fdp", "grain": ["bind_event_id"]},
+    "channel_crosswalk": {"relation": "ref.channel_crosswalk", "authority": "reference_data", "grain": ["channel_code"]}
+  },
+  "approved_operators": ["scoped_scan", "canonical_event_selection", "filter", "projection", "key_reduction",
+                         "window_exists", "validated_relationship_join", "aggregate_sufficient_statistics",
+                         "union_disjoint_partitions", "approved_python_operator", "assertion"],
+  "obligations": ["no_future_knowledge", "preserve_quote_grain", "numerator_not_above_denominator",
+                  "denominator_conservation", "disjoint_partitions"],
+  "sufficient_statistics": {"eligible": "count", "converted": "count", "immature_excluded": "count"},
+  "derived_metrics": {"conversion_rate": "sum(converted) / sum(eligible)"},
+  "determinism_class": "deterministic_exact_counts",
+  "applicability": {"lob": ["personal_auto"], "states": ["NC", "SC", "VA"], "valid_from": "2026-01-01", "valid_to": null},
+  "tests": {"fixture": "fixtures/edge_cases.json", "oracle": "aipr.verify.oracle (independent Python implementation)"},
+  "performance_envelope": {"max_cohort_rows_fixture": 50000}
+}

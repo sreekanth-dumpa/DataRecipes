@@ -1,0 +1,26 @@
+{
+  "description": "The 20 reusable discovery packet families across Data Product, Entity and Attribute tiers. Requests consume selected claims derived from these packets; they do not regenerate them.",
+  "tiers": ["data_product", "entity", "attribute"],
+  "families": [
+    {"id": "P01", "name": "Product Identity and Scope", "route_contribution": "Authoritative quote and policy products and LOB coverage"},
+    {"id": "P02", "name": "Metadata and Structural", "route_contribution": "Physical columns, types, views and identifiers"},
+    {"id": "P03", "name": "Data Profiling and Statistical", "route_contribution": "Cardinality, nulls, skew and partition statistics"},
+    {"id": "P04", "name": "Key and Relationship", "route_contribution": "Quote grain and one-to-many bind relationships"},
+    {"id": "P05", "name": "Semantic Understanding", "route_contribution": "Meaning of quote issuance and product version"},
+    {"id": "P06", "name": "Value and Code Semantics", "route_contribution": "State, LOB and channel code crosswalks"},
+    {"id": "P07", "name": "Temporal and Versioning", "route_contribution": "Effective time, knowledge time and snapshot behavior"},
+    {"id": "P08", "name": "Business Event and State", "route_contribution": "Issued, bound, cancelled and reinstated states"},
+    {"id": "P09", "name": "Process and Scenario", "route_contribution": "Quote-to-bind process and scenario exclusions"},
+    {"id": "P10", "name": "Decision and Business Rule", "route_contribution": "Approved counting and attribution rules"},
+    {"id": "P11", "name": "Analytical Semantics", "route_contribution": "Numerator, denominator, units and aggregation algebra"},
+    {"id": "P12", "name": "Crosswalk and Mapping", "route_contribution": "Quote-policy linkage across source applications"},
+    {"id": "P13", "name": "Usage and Query Mining", "route_contribution": "Tested prior routes and observed workload signatures"},
+    {"id": "P14", "name": "Lineage and Transformation", "route_contribution": "Source-to-answer and stage-to-stage provenance"},
+    {"id": "P15", "name": "Governance Quality and Security", "route_contribution": "Access, classification and quality obligations"},
+    {"id": "P16", "name": "Operational", "route_contribution": "Freshness, retention, queues and resource envelopes"},
+    {"id": "P17", "name": "Consumer and Serving", "route_contribution": "Chart dimensions, presentation and output limits"},
+    {"id": "P18", "name": "Evidence and Confidence", "route_contribution": "Claim support, contradictions and certification"},
+    {"id": "P19", "name": "Code and Application Behavior", "route_contribution": "How issuance, bind and cancellation are implemented"},
+    {"id": "P20", "name": "Documentation and External Knowledge", "route_contribution": "Specifications and human-authored corroborating evidence"}
+  ]
+}
