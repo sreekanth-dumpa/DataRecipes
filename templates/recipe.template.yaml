@@ -1,0 +1,73 @@
+# Recipe template -- copy to recipes/<domain>/<name>.yaml and fill in.
+# Schema: registry/recipe.schema.json. Validate with: python validator/validate.py
+# Do NOT leave this file under recipes/ -- it will fail validation (placeholders)
+# and break the 5-recipe decision gate in tests/test_decision_gate.py.
+
+id: domain.recipe_name                 # dot-namespaced, e.g. quote.eligible_journey
+version: "1.0"                         # immutable per spec; bump on any change
+kind: attribute                        # attribute | population | metric | feature | process
+                                        #   (feature/process are out of scope for this POC's compiler/validator)
+status: draft                          # draft | exploratory | verified | production_approved | filing_approved | deprecated | withdrawn
+use_scope: [exploratory_bi]            # what this status covers; verified-for-exploratory != filing-approved
+owner: domain-owner                    # accountable for scope and limitations
+description: >
+  One or two sentences of business intent: what this recipe answers and why.
+
+# --- optional: only for composite recipes (this one derives from others) ---
+# uses:
+#   - ref: quote.eligible_journey@2.1    # id@version, immutable
+#     as: eligible                       # local alias used in implementation.*
+
+parameters:                            # omit entirely if the recipe takes none
+  - name: knowledge_cutoff
+    type: date                         # date | string | int | float | boolean | enum
+    required: true
+    description: Point-in-time cutoff for effective-dated sources.
+  - name: product_line
+    type: enum
+    required: true
+    description: Restricts the population to one line (AUTO, HOME, ...).
+
+grain: quote_journey                   # explicit output grain, e.g. "product_version x month x segment"
+
+time_semantics:                        # REQUIRED if any parameter name contains "cutoff" or "as_of"
+  knowledge_cutoff_param: knowledge_cutoff
+  as_of_behavior: point_in_time        # point_in_time | latest | range
+
+output:
+  - name: quote_journey_id
+    type: string
+  - name: some_value
+    type: boolean
+    # unit: ratio                      # optional, for numeric outputs
+
+# --- implementation: pick ONE shape ---
+
+# Shape A: atomic recipe (no `uses`) -- binds directly to a source table per engine.
+implementation:
+  engines:
+    duckdb:
+      source_table: quote_fdp.quote_journey   # schema.table in data/warehouse.duckdb
+      join_keys: []                            # optional
+    snowflake:
+      source_table: QUOTE_FDP.QUOTE_JOURNEY    # declared only; no live connection in this POC
+
+# Shape B: composite recipe (has `uses`) -- joins + aggregates dependency CTEs.
+# implementation:
+#   join_on: [quote_journey_id]                      # shared key across all `uses` aliases
+#   group_by: ["segment.some_dimension"]              # optional
+#   output_expressions:                               # name -> ANSI SQL expression over aliases
+#     some_count: "COUNT(DISTINCT CASE WHEN eligible.is_eligible THEN eligible.quote_journey_id END)"
+#     some_rate: "some_count / NULLIF(other_count, 0)" # may reference sibling output names (compiler splits agg vs derived)
+
+tests:                                 # fixture names under tests/fixtures/<name>.yaml; omit if none yet
+  - domain_recipe_name_boundary_case
+
+limitations:                           # known scope exclusions that travel with the recipe
+  - State the known gap in one line, not a caveat paragraph.
+
+# approvals:                           # add once reviewed; omit while draft
+#   - role: domain_owner               # domain_owner | engineering | security | actuarial
+#     approver: name
+#     date: "2026-10-02"
+#     scope: exploratory_bi
